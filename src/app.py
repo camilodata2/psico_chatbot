@@ -1,67 +1,52 @@
 import streamlit as st
-from models.audio import transcribe_audio
+from models.llm import get_response
 from models.image import process_image
-from models.language import detect_language
-from models.conversation import generate_response
-from utils.logger import log_interaction, logger
+from models.audio import process_audio
+from models.language import translate_text
+from models.conversation  import save_message, get_context
+from PIL import Image
 
 def main():
-    try:
-        st.title("Chatbot de Psicología Multimodal")
-        st.write("Envía tu consulta en texto, imagen o audio.")
+    # Streamlit UI
+    st.title("🧠 Chatbot de Psicología")
+    st.write("Este chatbot puede responder a tus preguntas sobre psicología, analizar imágenes y transcribir audio.")
 
-        # Entrada de texto
-        user_text = st.text_input("Escribe tu mensaje:")
+    # Entrada de texto
+    input_text = st.text_area("Escribe tu pregunta aquí:")
 
-        # Subida de imagen
-        user_image = st.file_uploader("Sube una imagen (jpg, jpeg, png)", type=["jpg", "jpeg", "png"])
+    # Entrada de imagen
+    uploaded_image = st.file_uploader("Sube una imagen", type=["jpg", "png", "jpeg"])
 
-        # Subida de audio
-        user_audio = st.file_uploader("Sube un audio (wav, mp3, ogg)", type=["wav", "mp3", "ogg"])
+    # Entrada de audio
+    uploaded_audio = st.file_uploader("Sube un archivo de audio", type=["wav", "mp3", "m4a"])
 
-        if st.button("Enviar Consulta"):
-            combined_input = ""
-            
-            try:
-                if user_text:
-                    combined_input += user_text
-            except Exception as e:
-                logger.error("Error procesando texto: %s", e)
+    # Selector de idioma
+    language = st.selectbox("Idioma de respuesta", ["es", "en"])
 
-            try:
-                if user_image is not None:
-                    st.write("Procesando imagen...")
-                    image_caption = process_image(user_image)
-                    st.write("Descripción de la imagen:", image_caption)
-                    combined_input += " " + image_caption
-            except Exception as e:
-                logger.error("Error procesando imagen: %s", e)
+    if st.button("Enviar"):
+        context = get_context()
+        response = ""
 
-            try:
-                if user_audio is not None:
-                    st.write("Procesando audio...")
-                    audio_text = transcribe_audio(user_audio)
-                    st.write("Transcripción de audio:", audio_text)
-                    combined_input += " " + audio_text
-            except Exception as e:
-                logger.error("Error procesando audio: %s", e)
+        if input_text:
+            # Traducir al inglés si el idioma es español
+            if language == 'en':
+                input_text = translate_text(input_text, target_language='en')
+            response = get_response(input_text, context)
+            # Traducir al español si la respuesta debe estar en español
+            if language == 'es':
+                response = translate_text(response, target_language='es')
+            save_message(input_text, response)
 
-            if combined_input.strip():
-                st.write("Entrada combinada:", combined_input)
-                lang = detect_language(combined_input)
-                st.write("Idioma detectado:", lang)
-                st.write("Generando respuesta del chatbot robusto...")
-                response = generate_response(combined_input, language=lang)
-                st.write("Respuesta del Chatbot:")
-                st.write(response)
-                
-                log_interaction(combined_input, response)
-                logger.info("Interacción registrada en el log.")
-            else:
-                st.write("Por favor, ingresa algún contenido para procesar.")
-    except Exception as e:
-        logger.error("Error en la aplicación principal: %s", e)
-        st.write("Ocurrió un error en la aplicación.")
+        if uploaded_image:
+            image = Image.open(uploaded_image)
+            image_response = process_image(image)
+            response += f"\n\n{image_response}"
+
+        if uploaded_audio:
+            audio_response = process_audio(uploaded_audio)
+            response += f"\n\nTranscripción de audio: {audio_response}"
+
+        st.write(response)
 
 if __name__ == "__main__":
     main()
