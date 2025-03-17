@@ -1,0 +1,97 @@
+# ================================================
+# 🐍 Python
+# ================================================
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+
+# Evitar archivos temporales de Python
+*.bak
+*.tmp
+*.swp
+
+# Archivos de caché de IPython y Jupyter
+.ipynb_checkpoints
+
+# ================================================
+# 📦 Entornos virtuales
+# ================================================
+.env
+.venv/
+env/
+venv/
+ENV/
+
+# ================================================
+# 🔑 Tokens y credenciales
+# ================================================
+*.env
+*.json
+hf_token.txt
+secrets.json
+config.yaml
+
+# ================================================
+# 🗑️ Logs y caché
+# ================================================
+*.log
+*.out
+*.pid
+*.swp
+logs/
+**/*.log
+nohup.out
+
+# ================================================
+# 💾 Archivos de datos temporales o binarios
+# ================================================
+*.bak
+*.tmp
+*.h5
+*.parquet
+*.csv
+*.db
+.DS_Store
+
+# ================================================
+# 🚀 Caché de modelos (Hugging Face y Transformers)
+# ================================================
+.cache/
+**/.cache/
+**/cache/
+*.safetensors
+*.pth
+*.pt
+*.ckpt
+
+# ================================================
+# 🔥 Cache de Ollama
+# ================================================
+~/.ollama/
+ollama.db
+ollama.log
+
+
+# ================================================
+# 🧪 Archivos de prueba
+# ================================================
+tests/__pycache__/
+test_results/
+*.testlog
+.noseids
+
+# ================================================
+# 🌐 Archivos de configuración web
+# ================================================
+*.html
+*.css
+*.js
+*.ts
+*.map
+node_modules/
+package-lock.json
+yarn.lock

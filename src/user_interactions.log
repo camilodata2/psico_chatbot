@@ -1,0 +1,4 @@
+2025-03-17 12:47:06,324 - INFO - Cargando modelo de transcripción: openai/whisper-large-v3 en cpu
+2025-03-17 12:47:06,708 - ERROR - Error al cargar el modelo de transcripción: Using `low_cpu_mem_usage=True` or a `device_map` requires Accelerate: `pip install 'accelerate>=0.26.0'`
+2025-03-17 12:58:34,632 - INFO - Cargando modelo de transcripción: openai/whisper-large-v3 en cpu
+2025-03-17 12:58:34,753 - ERROR - Error al cargar el modelo de transcripción: Using `low_cpu_mem_usage=True` or a `device_map` requires Accelerate: `pip install 'accelerate>=0.26.0'`
