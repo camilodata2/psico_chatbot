@@ -12,9 +12,9 @@ def main():
 
         # Entrada de texto
         user_text = st.text_input("Escribe tu mensaje:")
-
+        print(user_text)
         # Subida de imagen
-        user_image = st.file_uploader("Sube una imagen (jpg, jpeg, png)", type=["jpg", "jpeg", "png"])
+        #user_image = st.file_uploader("Sube una imagen (jpg, jpeg, png)", type=["jpg", "jpeg", "png"])
 
         # Subida de audio
         user_audio = st.file_uploader("Sube un audio (wav, mp3, ogg)", type=["wav", "mp3", "ogg"])
@@ -28,14 +28,14 @@ def main():
             except Exception as e:
                 logger.error("Error procesando texto: %s", e)
 
-            try:
-                if user_image is not None:
-                    st.write("Procesando imagen...")
-                    image_caption = process_image(user_image)
-                    st.write("Descripción de la imagen:", image_caption)
-                    combined_input += " " + image_caption
-            except Exception as e:
-                logger.error("Error procesando imagen: %s", e)
+            #try:
+            #    if user_image is not None:
+            #        st.write("Procesando imagen...")
+            #        image_caption = process_image(user_image)
+            #        st.write("Descripción de la imagen:", image_caption)
+            #        combined_input += " " + image_caption
+            #except Exception as e:
+            #    logger.error("Error procesando imagen: %s", e)
 
             try:
                 if user_audio is not None:
@@ -47,11 +47,13 @@ def main():
                 logger.error("Error procesando audio: %s", e)
 
             if combined_input.strip():
+                print(combined_input.strip())
+                print(combined_input)
                 st.write("Entrada combinada:", combined_input)
                 lang = detect_language(combined_input)
                 st.write("Idioma detectado:", lang)
                 st.write("Generando respuesta del chatbot robusto...")
-                response = generate_response(combined_input, language=lang)
+                response = generate_response(combined_input)
                 st.write("Respuesta del Chatbot:")
                 st.write(response)
                 

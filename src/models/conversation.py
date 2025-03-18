@@ -1,11 +1,12 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
-from langchain.llms import HuggingFacePipeline
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import Chroma
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from langchain_community.llms import HuggingFacePipeline
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
 from langchain.memory import VectorStoreRetrieverMemory
 from config import ROBUST_CONVERSATION_MODEL
 from utils.logger import logger
-from models.language import translate_text
+from models.language import translate_tex, detect_language
 
 def get_memory():
     """
@@ -23,70 +24,89 @@ def get_memory():
         logger.error("Error inicializando memoria: %s", e)
         return None
 
-def get_llm():
+def get_llm(model_size: str = "medium"):
     """
-    Inicializa el modelo robusto para conversación utilizando HuggingFacePipeline a través de LangChain.
+    Loads the DialoGPT model and tokenizer.
+
+    Parameters:
+        model_size (str): Model variant to use ("small", "medium", "large"). Default is "medium".
+
+    Returns:
+        tuple: (tokenizer, model) if successful, otherwise None.
     """
     try:
-        logger.info("Cargando modelo robusto para conversación...")
-        tokenizer = AutoTokenizer.from_pretrained(ROBUST_CONVERSATION_MODEL)
-        model = AutoModelForCausalLM.from_pretrained(ROBUST_CONVERSATION_MODEL, device_map="auto")
-        hf_pipeline = pipeline("text-generation", model=model, tokenizer=tokenizer, max_length=512)
-        llm = HuggingFacePipeline(pipeline=hf_pipeline)
-        logger.info("Modelo robusto cargado correctamente.")
-        return llm
+        print('I enter the get_llm function')
+        logger.info("Loading DialoGPT-%s model...")
+        model_name = f"microsoft/DialoGPT-{model_size}"
+        tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True, force_download=True)
+        model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float16, force_download=True)
+        return tokenizer, model
     except Exception as e:
-        logger.error("Error cargando modelo robusto: %s", e)
-        return None
+        logger.error("Error en generación de respuesta: %s", e)
+        return None, None
 
-def generate_response(input_text, language="es"):
+
+def generate_response(input_text):
     """
-    Genera una respuesta usando el LLM robusto y utilizando información de contexto extraída desde ChromaDB.
-    Si el idioma no es inglés, se traduce la entrada y la respuesta.
+    Generates a chatbot response using DialoGPT.
+
+    Parameters:
+        input_text (str): The user input message.
+
+    Returns:
+        str: The chatbot response.
     """
     try:
         logger.info("Generando respuesta para la consulta del usuario.")
-        if language != "en":
-            input_text_en = translate_text(input_text, target_language="en")
-            logger.info("Entrada traducida a inglés para procesamiento.")
-        else:
-            input_text_en = input_text
-
-        llm = get_llm()
-        if llm is None:
-            return "Error en la generación de respuesta."
+        print('I enter the generate_response function')
+        tokenizer, model = get_llm()
+        if tokenizer is None or model is None:
+            return "Error: Model not loaded."
+        print('I gao the model and the tokenizer')
+        if detect_language(input_text) != 'en':
+            input_text = translate_tex(input_text, dest_language='en')
 
         memory = get_memory()
         if memory is None:
-            context = "No se encontró información adicional."
+            context = ""
         else:
             logger.info("Recuperando contexto desde ChromaDB...")
-            retrieved_docs = memory.retriever.get_relevant_documents(input_text_en)
+            retrieved_docs = memory.retriever.invoke(input_text)
             if retrieved_docs:
                 context = "\n".join([doc.page_content for doc in retrieved_docs])
+                context = translate_tex(context)
                 logger.info("Contexto recuperado exitosamente.")
             else:
-                context = "No se encontró información adicional."
+                context = ""
                 logger.info("No se recuperó contexto adicional de ChromaDB.")
 
-        prompt = (
-            f"Utiliza la siguiente información de contexto para responder de manera precisa:\n"
-            f"{context}\n\n"
-            f"Pregunta: {input_text_en}\n\n"
-            f"Respuesta:"
-        )
+        if context:
+            prompt = f"""Use the next context to answer accurately:\n {context}\n New Prompt: {input_text}"""
+                
+        else:
+            prompt = input_text
 
         logger.info("Generando respuesta utilizando el modelo robusto.")
-        response_en = llm(prompt)
-        logger.info("Respuesta generada por el modelo.")
+        print('I am about to answer')
+        input_ids = tokenizer.encode(prompt + tokenizer.eos_token, return_tensors="pt")
 
-        if language != "en":
-            response = translate_text(response_en, target_language=language)
-            logger.info("Respuesta traducida al idioma original.")
-        else:
-            response = response_en
+        # Create attention mask
+        attention_mask = torch.ones(input_ids.shape, dtype=torch.long)
 
-        return response
+        # Generate response with explicit attention mask
+        response_ids = model.generate(
+            input_ids, 
+            attention_mask=attention_mask, 
+            pad_token_id=tokenizer.eos_token_id
+        )
+
+        # Decode and return the response
+        response_text = tokenizer.decode(response_ids[:, input_ids.shape[-1]:][0], skip_special_tokens=True)
+
+        response_text = translate_tex(response_text, 'es')
+        
+        return response_text
+
     except Exception as e:
         logger.error("Error en generación de respuesta: %s", e)
         return "Ocurrió un error al generar la respuesta."

@@ -1,0 +1,6 @@
+# Ignore virtual environment directory
+.venv/
+.env/
+
+# Ignore all files in the input folder
+input/
