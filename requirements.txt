@@ -1,0 +1,11 @@
+streamlit
+python-dotenv
+huggingface_hub
+pytesseract
+PyPDF2
+speechrecognition
+pydub
+langdetect
+googletrans==4.0.0-rc1
+Pillow
+ffmpeg-python
