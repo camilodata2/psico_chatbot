@@ -127,10 +127,11 @@ if prompt:
                     temperature=0.7,
                     repetition_penalty=1.2
                 )
+                print(type(response))
                 for chunk in response:
                     full_response += chunk
-                full_response_translated = translate_text(full_response, target_lang=language_code)
-                message_placeholder.markdown(full_response_translated)
+                #full_response_translated = translate_text(full_response, target_lang=language_code)
+                    message_placeholder.markdown(full_response)
             except Exception as e:
                 st.error(f"Error: {str(e)}")
                 full_response = "Lo siento, hubo un problema. Intenta de nuevo."

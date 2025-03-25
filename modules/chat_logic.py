@@ -14,10 +14,10 @@ def generate_response(prompt, history, pdf_context, mp3_context, image_context, 
     <|system|>
     {system_prompt}
 
-    Contexto adicional (PDF): {pdf_context}
-    Contexto adicional (MP3): {mp3_context}
-    Contexto adicional (Imagen): {image_context}
-    Contexto adicional (Video): {video_context}
+    Contexto adicional proporcionado por el usuario por medio de un archivo pdf: {pdf_context}
+    Contexto adicional proporcionado por el usuario por medio de un archivo de audio mp3: {mp3_context}
+    Contexto adicional proporcionado por el usuario por medio de una imagen: {image_context}
+    Contexto adicional proporcionado por el usuario por medio de un archivo multimedia o video: {video_context}
 
     <|user|>
     {history}
